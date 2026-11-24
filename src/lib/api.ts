@@ -35,3 +35,16 @@ export function errorMessage(e: unknown): string {
   if (e instanceof Error) return tr(e.message);
   return String(e);
 }
+
+/** Paths of files dropped from the OS. (E2E runs can supply them, because a
+ * synthetic drop has no real files; the hook exists only in the test harness,
+ * and the main process validates every path either way.) */
+export function droppedPaths(files: FileList): string[] {
+  const w = window as unknown as { __pdfed?: unknown; __e2eDropPaths?: string[] };
+  if (w.__pdfed && w.__e2eDropPaths) {
+    const p = w.__e2eDropPaths;
+    delete w.__e2eDropPaths;
+    return p;
+  }
+  return [...files].map((f) => bridge().files.pathForFile(f)).filter(Boolean);
+}

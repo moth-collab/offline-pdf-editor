@@ -9,6 +9,7 @@ import { addRecent, clearRecent, getRecent, getSettings, removeRecent, setSettin
 import { isAllowedUrl, openExternalSafely } from '../security/policy';
 import { prepare } from './ops';
 import { mtr } from '../i18n';
+import { defaultAppState, openDefaultAppSettings } from '../services/defaultApp';
 
 /**
  * Test-only automation of native dialogs. Active ONLY when running unpackaged
@@ -207,6 +208,9 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     }
     return openExternalSafely(String(url));
   });
+
+  handle('app:defaultPdfApp', () => defaultAppState());
+  handle('app:makeDefaultPdfApp', () => openDefaultAppSettings());
 
   handle('app:showSourceCode', () => {
     // packaged: resources/source/<archive>; development: the project folder itself

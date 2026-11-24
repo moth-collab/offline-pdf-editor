@@ -211,6 +211,14 @@ export const OPS: Record<string, OpDef> = {
     urlKeys: ['doc_id'],
     files: { file: ['path', 'read'] },
   },
+  'pages.insertImages': {
+    method: 'POST',
+    schema: z
+      .object({ doc_id: docId, at: page, files: z.array(token).min(1).max(2000), page_size: z.enum(['image', 'a4', 'letter', 'match']).optional(), margin: num.optional(), base_revision: baseRev })
+      .strict(),
+    path: D('/pages/insert-images'),
+    urlKeys: ['doc_id'],
+  },
   'pages.copyFrom': {
     method: 'POST',
     schema: z.object({ doc_id: docId, source_doc_id: docId, pages, at: page, base_revision: baseRev }).strict(),
@@ -578,7 +586,7 @@ export function prepare(op: string, payload: unknown): PreparedCall {
   if (op === 'doc.merge') {
     body.items = (parsed.items as any[]).map((it) => ({ path: resolveToken(it.file, 'read'), password: it.password, pages: it.pages }));
   }
-  if (op === 'doc.imagesToPdf') {
+  if (op === 'doc.imagesToPdf' || op === 'pages.insertImages') {
     body.paths = (parsed.files as string[]).map((t) => resolveToken(t, 'read'));
     delete body.files;
   }

@@ -69,6 +69,14 @@ class InsertFileRequest(BaseRevModel):
     pages: list[int] | None = None
 
 
+class InsertImagesRequest(BaseRevModel):
+    at: int
+    paths: list[str]
+    # "match": the size of the neighbouring page of this document
+    page_size: Literal["image", "a4", "letter", "match"] = "match"
+    margin: float = 0
+
+
 class CopyPagesRequest(BaseRevModel):
     source_doc_id: str
     pages: list[int]

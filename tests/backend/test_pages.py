@@ -141,3 +141,34 @@ def test_images_to_pdf(client, fixtures):
     doc = fitz.open(r["working_path"])
     assert doc[0].get_images()
     client.post(f"/documents/{r['doc_id']}/close", json={"delete_session": True})
+
+
+def test_insert_images_into_document(client, open_doc, fixtures, tmp_path):
+    """Images become pages of the open document at the chosen position (one undo step)."""
+    import shutil
+
+    from conftest import ok
+
+    shutil.copy(fixtures / "small.pdf", tmp_path / "small.pdf")
+    info = open_doc(tmp_path / "small.pdf")
+    doc = info["doc_id"]
+    base = ok(client.get(f"/documents/{doc}"))
+    n, rev = base["page_count"], base["revision"]
+    first = base["pages"][0]
+    res = ok(client.post(f"/documents/{doc}/pages/insert-images", json={
+        "at": 1, "paths": [str(fixtures / "logo.png"), str(fixtures / "photo.jpg")]}))
+    assert res["page_count"] == n + 2
+    # "match": new pages take the size of the neighbouring page (orientation follows the image)
+    for p in res["pages"][1:3]:
+        assert sorted([round(p["width"]), round(p["height"])]) == sorted([round(first["width"]), round(first["height"])])
+    # the pages contain the images
+    import pymupdf as fitz
+    w = ok(client.get(f"/documents/{doc}"))
+    d = fitz.open(w["working_path"]) if "working_path" in w else None
+    if d is not None:
+        assert d[1].get_images() and d[2].get_images()
+    # undo restores the original page count
+    back = ok(client.post(f"/documents/{doc}/revision", json={"revision": rev}))
+    assert back["page_count"] == n
+    bad = client.post(f"/documents/{doc}/pages/insert-images", json={"at": 0, "paths": [str(fixtures / "small.pdf")]})
+    assert bad.status_code == 400

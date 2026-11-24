@@ -1082,6 +1082,57 @@ suite('marks', async () => {
 });
 
 // ---------------------------------------------------------------------------
+suite('pagebar', async () => {
+  const work = freshDir('pagebar-docs');
+  fs.copyFileSync(path.join(FIX, 'small.pdf'), path.join(work, 'small.pdf'));
+  const { app, win, errors } = await launch({ userData: freshDir('pagebar-user'), outDir: freshDir('pagebar-out') });
+  const count = () => pageCount(win);
+  try {
+    await openViaDialog(app, win, path.join(work, 'small.pdf'));
+    await waitRendered(win, 0);
+    await win.waitForSelector('[data-testid=page-toolbar]');
+
+    await test('"+" inserts images as pages after the current page', async () => {
+      const n = await count();
+      await setEnv(app, { PDFED_E2E_OPEN: [path.join(FIX, 'logo.png'), path.join(FIX, 'photo.jpg')].join('|') });
+      await win.click('[data-testid="pt-page.insertImages"]');
+      await win.waitForFunction((k) => parseInt(document.querySelector('[data-testid=page-count]')?.textContent?.replace(/[^0-9]/g, '') ?? '0', 10) === k, n + 2);
+      assert.equal(await win.locator('[data-testid=thumbnail]').count(), n + 2);
+    });
+
+    await test('page toolbar: rotate and delete the selected page, undo restores', async () => {
+      const n = await count();
+      await win.locator('[data-testid=thumbnail] >> nth=1').locator('div').first().click();
+      await win.click('[data-testid="pt-page.rotateRight"]');
+      await win.waitForFunction(() => document.querySelector('[data-testid=save-status]')?.textContent === 'Unsaved changes');
+      await setEnv(app, { PDFED_E2E_ANSWERS: '0' });
+      await win.click('[data-testid="pt-page.delete"]');
+      await win.waitForFunction((k) => parseInt(document.querySelector('[data-testid=page-count]')?.textContent?.replace(/[^0-9]/g, '') ?? '0', 10) === k, n - 1);
+      await win.keyboard.press('Control+Z');
+      await win.waitForFunction((k) => parseInt(document.querySelector('[data-testid=page-count]')?.textContent?.replace(/[^0-9]/g, '') ?? '0', 10) === k, n);
+    });
+
+    await test('dropping image files on the thumbnails inserts them as pages', async () => {
+      const n = await count();
+      // simulate an OS file drop: the drop handler asks the main process to register the dropped paths
+      await win.evaluate(async (p) => {
+        const target = document.querySelector('[data-testid=thumb-drop]');
+        const dt = new DataTransfer();
+        dt.items.add(new File([new Uint8Array([1])], 'logo.png', { type: 'image/png' }));
+        (window).__e2eDropPaths = [p];
+        target.dispatchEvent(new DragEvent('dragover', { dataTransfer: dt, bubbles: true, cancelable: true }));
+        target.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true }));
+      }, path.join(FIX, 'logo.png'));
+      await win.waitForFunction((k) => parseInt(document.querySelector('[data-testid=page-count]')?.textContent?.replace(/[^0-9]/g, '') ?? '0', 10) === k, n + 1);
+    });
+
+    await test('no renderer errors', async () => assert.deepEqual(errors, []));
+  } finally {
+    await app.close().catch(() => undefined);
+  }
+});
+
+// ---------------------------------------------------------------------------
 suite('i18n', async () => {
   const userData = freshDir('i18n-user');
   fs.writeFileSync(path.join(userData, 'settings.json'), JSON.stringify({ language: 'th' }));

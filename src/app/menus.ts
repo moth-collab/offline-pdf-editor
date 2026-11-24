@@ -99,6 +99,7 @@ export const MENUS: { label: string; items: MenuEntry[] }[] = [
       { cmd: 'page.organizer' },
       { sep: true },
       { cmd: 'page.insertBlank' },
+      { cmd: 'page.insertImages' },
       { cmd: 'page.insertFile' },
       { cmd: 'page.duplicate' },
       { cmd: 'page.delete' },
@@ -244,7 +245,7 @@ export const RIBBON: Record<string, RibbonGroup[]> = {
   ],
   organize: [
     { label: 'View', buttons: [ { cmd: 'page.organizer', icon: Files, label: 'Organize Pages', big: true } ] },
-    { label: 'Insert', buttons: [ { cmd: 'page.insertBlank', icon: FilePlus2, label: 'Blank Page' }, { cmd: 'page.insertFile', icon: FileInput, label: 'From File' }, { cmd: 'page.duplicate', icon: Copy, label: 'Duplicate' } ] },
+    { label: 'Insert', buttons: [ { cmd: 'page.insertImages', icon: ImagePlus, label: 'Images', big: true }, { cmd: 'page.insertBlank', icon: FilePlus2, label: 'Blank Page' }, { cmd: 'page.insertFile', icon: FileInput, label: 'From File' }, { cmd: 'page.duplicate', icon: Copy, label: 'Duplicate' } ] },
     { label: 'Pages', buttons: [ { cmd: 'page.delete', icon: Trash2, label: 'Delete', big: true }, { cmd: 'page.rotateLeft', icon: RotateCcw, label: 'Rotate Left' }, { cmd: 'page.rotateRight', icon: RotateCw, label: 'Rotate Right' }, { cmd: 'page.reverse', icon: ArrowDownUp, label: 'Reverse' } ] },
     { label: 'Document', buttons: [ { cmd: 'doc.extract', icon: FileOutput, label: 'Extract', big: true }, { cmd: 'doc.merge', icon: Combine, label: 'Merge', big: true }, { cmd: 'doc.split', icon: Scissors, label: 'Split', big: true } ] },
     { label: 'Page Box', buttons: [ { cmd: 'page.crop', icon: Crop, label: 'Crop' }, { cmd: 'page.resize', icon: Minimize2, label: 'Resize' } ] },

@@ -1,12 +1,13 @@
 /* Page organisation commands (Phase 2). Operate on the selected pages, or the
  * current page when nothing is selected. */
+import type { FileRef } from '@shared/types';
 import { bridge, call, errorMessage } from '@/lib/api';
 import { formatRanges } from '@/lib/utils';
 import { activeDoc, useDocuments, type DocState } from '@/stores/documents';
 import { toast, useUi } from '@/stores/ui';
 import { askText } from '@/stores/prompt';
 import { applyInfo, runOp, snapshot } from '@/services/docService';
-import { register } from './commands';
+import { goToPage, register } from './commands';
 import { tr } from '@/i18n';
 
 export function targetPages(d: DocState): number[] {
@@ -78,6 +79,43 @@ export async function movePagesToDocument(source: DocState, targetId: string, pa
   useDocuments.getState().update(source.id, { selectedPages: [] });
 }
 
+/** Choose images; each becomes a page inserted after the selected (or current) page. */
+export async function insertImages(d: DocState) {
+  const refs = await bridge().dialog.open('images', tr('Choose images to insert'));
+  if (!refs.length) return;
+  const at = targetPages(d)[targetPages(d).length - 1] + 1;
+  const res = await runOp(d.id, refs.length === 1 ? tr('Insert image as page') : tr('Insert {0} images as pages', refs.length), 'pages.insertImages', {
+    at,
+    files: refs.map((r) => r.token),
+  });
+  if (res) {
+    useDocuments.getState().update(d.id, { selectedPages: refs.map((_, i) => at + i) });
+    goToPage(at);
+  }
+}
+
+/** Files dropped on the page thumbnails: images become pages, PDFs are inserted. */
+export async function insertDropped(d: DocState, refs: FileRef[]) {
+  const images = refs.filter((r) => !r.name.toLowerCase().endsWith('.pdf'));
+  const pdfs = refs.filter((r) => r.name.toLowerCase().endsWith('.pdf'));
+  let at = targetPages(d)[targetPages(d).length - 1] + 1;
+  if (images.length) {
+    const res = await runOp(d.id, images.length === 1 ? tr('Insert image as page') : tr('Insert {0} images as pages', images.length), 'pages.insertImages', {
+      at,
+      files: images.map((r) => r.token),
+    });
+    if (!res) return;
+    at += res.page_count - d.info.page_count;
+  }
+  for (const pdf of pdfs) {
+    const before = useDocuments.getState().docs[d.id].info.page_count;
+    const res = await runOp(d.id, tr('Insert pages from file'), 'pages.insertFile', { at, file: pdf.token });
+    if (!res) return;
+    at += res.page_count - before;
+  }
+  goToPage(targetPages(d)[targetPages(d).length - 1] + 1);
+}
+
 export async function insertFromFile(d: DocState, at = d.currentPage + 1) {
   const refs = await bridge().dialog.open('pdf', tr("Insert pages from PDF"));
   if (!refs.length) return;
@@ -116,6 +154,7 @@ const withDoc = (fn: (d: DocState) => unknown) => () => {
 register([
   { id: 'page.organizer', label: 'Organize Pages', shortcut: 'Ctrl+Shift+O', run: () => useUi.getState().setOrganizerOpen(!useUi.getState().organizerOpen), enabled: () => !!activeDoc(), checked: () => useUi.getState().organizerOpen },
   { id: 'page.insertBlank', label: 'Insert Blank Page…', run: dialog('insert-blank'), enabled: editable },
+  { id: 'page.insertImages', label: 'Insert Images as Pages…', run: withDoc((d) => insertImages(d)), enabled: editable },
   { id: 'page.insertFile', label: 'Insert Pages from File…', run: withDoc((d) => insertFromFile(d)), enabled: editable },
   { id: 'page.duplicate', label: 'Duplicate Pages', run: withDoc((d) => runOp(d.id, tr("Duplicate pages"), 'pages.duplicate', { pages: targetPages(d) })), enabled: editable },
   { id: 'page.delete', label: 'Delete Pages…', shortcut: 'Ctrl+Shift+D', run: withDoc((d) => deletePages(d)), enabled: editable },

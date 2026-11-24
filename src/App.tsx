@@ -13,7 +13,7 @@ import { BusyOverlay, PromptDialog, Toasts } from '@/components/dialogs/AppDialo
 import { DialogHost } from '@/components/dialogs/DialogHost';
 import { PdfViewer } from '@/features/viewer/PdfViewer';
 import { PageOrganizer } from '@/features/page-organizer/dialogs';
-import { bridge, call } from '@/lib/api';
+import { bridge, call, droppedPaths } from '@/lib/api';
 import { useActiveDoc } from '@/stores/documents';
 import { toast, useUi } from '@/stores/ui';
 import { closeAll, openFiles, refreshInfo, startAutosave } from '@/services/docService';
@@ -106,7 +106,7 @@ function DropZone({ children }: { children: React.ReactNode }) {
         setOver(false);
         if (!e.dataTransfer.files.length) return;
         e.preventDefault();
-        const paths = [...e.dataTransfer.files].map((f) => bridge().files.pathForFile(f)).filter(Boolean);
+        const paths = droppedPaths(e.dataTransfer.files);
         const refs = await bridge().files.registerDropped(paths);
         if (refs.length < paths.length) toast('warning', tr("Some files were ignored"), tr("Only PDF documents and images can be opened."));
         if (refs.length) openFiles(refs);

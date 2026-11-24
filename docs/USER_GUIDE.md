@@ -7,6 +7,15 @@ follows the Windows display language. You can change it any time in
 **Preferences › General › Language**; the change applies immediately and
 does not affect open documents.
 
+## Open PDF files with this program by default (Windows)
+
+On the Start screen choose **Set as default** (or *Preferences › General ›
+Default PDF app*). Windows Settings opens on this program's page; select it
+for `.pdf` once. After that, double-clicking a PDF opens it in Offline PDF
+Editor, in a new tab if the program is already running. Windows does not let
+programs change the default themselves, so this one confirmation is needed,
+as with any PDF reader. (The portable version does not register itself.)
+
 ## Opening documents
 
 - **File › Open** (`Ctrl+O`), drag-and-drop onto the window, double-clicking a
@@ -47,6 +56,22 @@ reorder, multi-select with `Ctrl`/`Shift`, rotate, delete, duplicate, insert
 blank pages or other files, extract, copy pages between open documents,
 reverse, crop and resize. Merging and splitting are under **File** and
 **Pages**.
+
+### Quick page actions and adding images
+
+Above the page thumbnails there is a toolbar: **insert images (+)**, insert
+pages from a PDF, insert a blank page, duplicate, rotate left/right, extract
+and delete. The actions apply to the selected thumbnails, or to the current
+page when none is selected.
+
+- **Insert images as pages**: click **+** (or *Page › Insert Images as
+  Pages…*) and choose one or more images (JPG, PNG, TIFF…). They are
+  converted to pages and inserted after the selected page, with the same page
+  size as the document.
+- **Drag & drop**: drop image or PDF files onto the thumbnails to insert them
+  as pages. Dropping them elsewhere opens them as separate documents.
+
+All of these can be undone with `Ctrl+Z`.
 
 ## Comments and markup
 

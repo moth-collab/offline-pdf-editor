@@ -12,6 +12,7 @@ import { bridge, call, errorMessage, ApiException } from '@/lib/api';
 import { formatBytes, formatRanges, parsePageRanges, stripExt } from '@/lib/utils';
 import { useDocuments, type DocState } from '@/stores/documents';
 import { ThumbnailGrid } from './ThumbnailsPanel';
+import { PageToolbar } from './PageToolbar';
 import { toast, useUi } from '@/stores/ui';
 import { askText } from '@/stores/prompt';
 import { addOpened, runOp } from '@/services/docService';
@@ -522,6 +523,7 @@ export function PageOrganizer() {
     <div className="flex h-full flex-col bg-workspace" data-testid="page-organizer">
       <div className="flex items-center gap-3 border-b bg-background px-3 py-1.5 text-[12px]">
         <span className="font-semibold">{tr("Organize pages")}</span>
+        <PageToolbar className="border-x px-1" />
         <span className="text-muted-foreground">
           {doc.selectedPages.length ? tr("{0} selected ({1})", doc.selectedPages.length, formatRanges(doc.selectedPages)) : tr("Click to select · Ctrl/Shift for multiple · drag to reorder · right-click for actions")}
         </span>

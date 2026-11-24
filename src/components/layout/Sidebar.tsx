@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Bookmark, ChevronDown, ChevronRight, Eye, EyeOff, FileSearch, Images, Layers, MessageSquare, Paperclip, Pencil, Plus, Save, Trash2, X } from 'lucide-react';
 import { Tooltip, Input, Checkbox } from '@/components/ui/controls';
 import { Button } from '@/components/ui/button';
-import { bridge, call, errorMessage } from '@/lib/api';
+import { bridge, call, droppedPaths, errorMessage } from '@/lib/api';
 import { cn, formatBytes } from '@/lib/utils';
 import { useDocuments, type DocState } from '@/stores/documents';
 import { toast, useUi, type SidebarTab } from '@/stores/ui';
@@ -10,6 +10,8 @@ import { goToPage, getCommand, runCommand } from '@/app/commands';
 import { runOp } from '@/services/docService';
 import { askText } from '@/stores/prompt';
 import { ThumbnailGrid } from '@/features/page-organizer/ThumbnailsPanel';
+import { PageToolbar } from '@/features/page-organizer/PageToolbar';
+import { insertDropped } from '@/app/pageCommands';
 import { getPdf } from '@/features/viewer/pdfjs';
 import { viewerBus } from '@/features/viewer/viewerBus';
 import type { SearchHit } from '@/types/editor';
@@ -203,6 +205,44 @@ function LayersPanel({ doc }: { doc: DocState }) {
 }
 
 // ---------------------------------------------------------------- search
+/** Dropping image or PDF files on the thumbnails inserts them as pages. */
+function ThumbDropTarget({ doc, children }: { doc: DocState; children: React.ReactNode }) {
+  const [over, setOver] = useState(false);
+  const editable = doc.info.owner_authenticated !== false;
+  return (
+    <div
+      className="relative flex h-full flex-col"
+      data-testid="thumb-drop"
+      onDragOver={(e) => {
+        if (!editable || !e.dataTransfer.types.includes('Files')) return;
+        e.preventDefault();
+        e.stopPropagation();
+        setOver(true);
+      }}
+      onDragLeave={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) setOver(false);
+      }}
+      onDrop={async (e) => {
+        setOver(false);
+        if (!editable || !e.dataTransfer.files.length) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const paths = droppedPaths(e.dataTransfer.files);
+        const refs = await bridge().files.registerDropped(paths);
+        if (refs.length < paths.length) toast('warning', tr('Some files were ignored'), tr('Only PDF documents and images can be opened.'));
+        if (refs.length) insertDropped(doc, refs);
+      }}
+    >
+      {children}
+      {over && (
+        <div className="pointer-events-none absolute inset-1 z-20 flex items-center justify-center rounded-lg border-2 border-dashed border-primary bg-primary/10 p-3 text-center text-[12px] font-medium text-primary">
+          {tr('Drop images or PDF files to insert them as pages')}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function SearchPanel({ doc }: { doc: DocState }) {
   const [query, setQuery] = useState(doc.search?.query ?? '');
   const [caseSensitive, setCase] = useState(false);
@@ -323,9 +363,12 @@ export function Sidebar({ doc }: { doc: DocState }) {
         <div className="relative flex flex-col" style={{ width }}>
           <div className="min-h-0 flex-1 overflow-hidden">
             {tab === 'thumbnails' && (
-              <div className="h-full overflow-auto">
-                <ThumbnailGrid doc={doc} width={Math.min(width - 60, 170)} />
-              </div>
+              <ThumbDropTarget doc={doc}>
+                <PageToolbar className="flex-wrap border-b px-1.5 py-1" />
+                <div className="min-h-0 flex-1 overflow-auto">
+                  <ThumbnailGrid doc={doc} width={Math.min(width - 60, 170)} />
+                </div>
+              </ThumbDropTarget>
             )}
             {tab === 'bookmarks' && <BookmarksPanel doc={doc} />}
             {tab === 'attachments' && <AttachmentsPanel doc={doc} />}

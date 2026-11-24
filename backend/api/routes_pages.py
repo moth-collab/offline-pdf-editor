@@ -10,6 +10,7 @@ from fastapi import APIRouter
 from core.config import get_settings
 from core.errors import AppError
 from models.schemas import (CopyPagesRequest, CropRequest, ExtractRequest, ImagesToPdfRequest, InsertBlankRequest,
+                            InsertImagesRequest,
                             InsertFileRequest, MergeRequest, MovePagesRequest, PagesRequest, ReorderRequest,
                             ResizeRequest, RotateRequest, SplitRequest)
 from services import merge_split, page_manager
@@ -80,6 +81,34 @@ def insert_file(doc_id: str, req: InsertFileRequest):
             src.close()
 
     return _mutate(doc_id, "Insert pages from file", fn, req.base_revision)
+
+
+@router.post("/documents/{doc_id}/pages/insert-images")
+def insert_images(doc_id: str, req: InsertImagesRequest):
+    """Convert images to pages and insert them into the document (one undo step)."""
+    s = manager.get(doc_id)
+    if not req.paths:
+        raise AppError("invalid_request", "Select at least one image")
+    if not 0 <= req.margin <= 200:
+        raise AppError("invalid_request", "Invalid margin")
+    tmp = s.dir / f"images-{uuid.uuid4().hex[:8]}.pdf"
+
+    def fn(d: fitz.Document):
+        size: str | tuple[float, float] = req.page_size
+        if req.page_size == "match":
+            ref = d[min(max(req.at - 1, 0), d.page_count - 1)].rect
+            size = (ref.width, ref.height) if ref.width <= ref.height else (ref.height, ref.width)
+        merge_split.images_to_pdf(req.paths, tmp, size, req.margin)
+        src = fitz.open(str(tmp))
+        try:
+            return page_manager.insert_from(d, src, req.at, None)
+        finally:
+            src.close()
+
+    try:
+        return _mutate(doc_id, f"Insert {len(req.paths)} image{'s' if len(req.paths) > 1 else ''}", fn, req.base_revision)
+    finally:
+        tmp.unlink(missing_ok=True)
 
 
 @router.post("/documents/{doc_id}/pages/copy-from")

@@ -141,6 +141,7 @@ export function ThumbnailGrid({ doc, width, columns }: { doc: DocState; width: n
         <ContextMenuItem onSelect={() => runCommand('page.rotateLeft')}>{tr("Rotate Left")}</ContextMenuItem>
         <ContextMenuItem onSelect={() => runCommand('page.rotateRight')}>{tr("Rotate Right")}</ContextMenuItem>
         <ContextMenuSeparator />
+        <ContextMenuItem onSelect={() => runCommand('page.insertImages')}>{tr("Insert Images as Pages…")}</ContextMenuItem>
         <ContextMenuItem onSelect={() => runCommand('page.insertBlank')}>{tr("Insert Blank Page…")}</ContextMenuItem>
         <ContextMenuItem onSelect={() => runCommand('page.insertFile')}>{tr("Insert from File…")}</ContextMenuItem>
         <ContextMenuItem onSelect={() => runCommand('page.duplicate')}>{tr("Duplicate")}</ContextMenuItem>

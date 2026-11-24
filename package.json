@@ -1,7 +1,7 @@
 {
   "name": "offline-pdf-editor",
   "productName": "Offline PDF Editor",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Professional offline PDF editor for Windows. All processing happens locally.",
   "author": "Offline PDF Editor Team",
   "license": "AGPL-3.0-or-later",

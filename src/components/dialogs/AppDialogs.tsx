@@ -292,6 +292,10 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
   const setSettings = useUi((s) => s.setSettings);
   const [fonts, setFonts] = useState<{ family: string }[]>([]);
   const [caps, setCaps] = useState<any>(null);
+  const [defaultApp, setDefaultApp] = useState<{ supported: boolean; isDefault: boolean } | null>(null);
+  useEffect(() => {
+    bridge().app.defaultPdfApp().then(setDefaultApp).catch(() => undefined);
+  }, []);
   useEffect(() => {
     call<{ families: { family: string }[] }>('fonts.list').then((r) => setFonts(r.families)).catch(() => undefined);
     call('app.capabilities').then(setCaps).catch(() => undefined);
@@ -326,6 +330,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
           </TabsList>
           <div className="min-h-0 flex-1 overflow-auto pt-2">
             <TabsContent value="general">
+              {defaultApp?.supported && row(tr("Default PDF app"), <Button size="sm" variant="outline" className="w-full" onClick={() => bridge().app.makeDefaultPdfApp()}>{defaultApp.isDefault ? tr("Already the default ✓") : tr("Set as default…")}</Button>, tr("Open PDF files with this program when you double-click them"))}
               {row(tr("Language"), <Select value={settings.language} onValueChange={(v) => set({ language: v as any })} options={[{ value: 'en', label: 'English', raw: true }, { value: 'th', label: 'ไทย (Thai)', raw: true }]} />, tr("Interface language"))}
               {row(tr("Author name"), <Input value={settings.authorName} onChange={(e) => set({ authorName: e.target.value })} />, tr("Shown on your comments"))}
               {row(tr("Theme"), <Select value={settings.theme} onValueChange={(v) => set({ theme: v as any })} options={[{ value: 'light', label: tr("Light") }, { value: 'dark', label: tr("Dark") }, { value: 'system', label: tr("Follow Windows") }]} />)}

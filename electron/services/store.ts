@@ -57,6 +57,7 @@ const SETTING_VALIDATORS: { [K in keyof AppSettings]: (v: unknown) => boolean } 
   ocrDpi: (v) => Number.isInteger(v) && (v as number) >= 100 && (v as number) <= 600,
   confirmExternalLinks: (v) => typeof v === 'boolean',
   authorName: (v) => typeof v === 'string' && v.length <= 200,
+  defaultAppPromptDismissed: (v) => typeof v === 'boolean',
 };
 
 export function setSettings(patch: Record<string, unknown>): AppSettings {

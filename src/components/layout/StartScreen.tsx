@@ -1,11 +1,34 @@
 import { useEffect, useState } from 'react';
-import { Clock, FileText, FolderOpen, Images, Combine, WifiOff, X } from 'lucide-react';
+import { Clock, FileText, FolderOpen, Images, Combine, Star, WifiOff, X } from 'lucide-react';
 import type { RecentFile } from '@shared/types';
 import { Button } from '@/components/ui/button';
 import { bridge } from '@/lib/api';
 import { openDocument, openWithDialog } from '@/services/docService';
 import { runCommand } from '@/app/commands';
+import { useUi } from '@/stores/ui';
 import { tr } from '@/i18n';
+
+/** Windows: suggest making this the default PDF app (the user confirms in Settings). */
+function DefaultAppBanner() {
+  const dismissed = useUi((s) => s.settings.defaultAppPromptDismissed);
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    bridge().app.defaultPdfApp().then((st) => setShow(st.supported && !st.isDefault)).catch(() => undefined);
+  }, []);
+  if (!show || dismissed) return null;
+  const dismiss = async () => useUi.getState().setSettings(await bridge().settings.set({ defaultAppPromptDismissed: true }));
+  return (
+    <div className="mb-6 flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3" data-testid="default-app-banner">
+      <Star className="h-5 w-5 shrink-0 text-primary" />
+      <div className="min-w-0 flex-1">
+        <div className="text-[13px] font-medium">{tr('Open PDF files with Offline PDF Editor')}</div>
+        <div className="text-[11.5px] text-muted-foreground">{tr('Double-click any PDF to open it here. Windows asks you to confirm the choice once in Settings.')}</div>
+      </div>
+      <Button size="sm" onClick={() => bridge().app.makeDefaultPdfApp()}>{tr('Set as default')}</Button>
+      <Button size="sm" variant="ghost" onClick={dismiss}>{tr('Not now')}</Button>
+    </div>
+  );
+}
 
 export function StartScreen() {
   const [recent, setRecent] = useState<RecentFile[]>([]);
@@ -27,6 +50,7 @@ export function StartScreen() {
             </p>
           </div>
         </div>
+        <DefaultAppBanner />
         <div className="mb-6 grid grid-cols-3 gap-3">
           <button className="flex items-center gap-3 rounded-lg border bg-background p-4 text-left shadow-sm hover:border-primary" onClick={openWithDialog} data-testid="start-open">
             <FolderOpen className="h-6 w-6 text-primary" />

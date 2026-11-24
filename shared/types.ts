@@ -112,6 +112,8 @@ export interface AppSettings {
   ocrDpi: number;
   confirmExternalLinks: boolean;
   authorName: string;
+  /** the Start screen stops suggesting "make default PDF app" */
+  defaultAppPromptDismissed: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -135,6 +137,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   ocrDpi: 300,
   confirmExternalLinks: true,
   authorName: 'User',
+  defaultAppPromptDismissed: false,
 };
 
 export interface AppInfo {
@@ -186,6 +189,10 @@ export interface PdfApi {
     showItemInFolder(token: string): Promise<void>;
     /** Reveal the bundled complete source code and licence (AGPL-3.0). */
     showSourceCode(): Promise<boolean>;
+    /** Windows: is the app installed with file-type capabilities, and is it the default PDF app? */
+    defaultPdfApp(): Promise<{ supported: boolean; isDefault: boolean; scope: 'user' | 'machine' | null }>;
+    /** Windows: open Settings › Default apps on this app's page. */
+    makeDefaultPdfApp(): Promise<boolean>;
     setTitleBarTheme(theme: 'light' | 'dark'): Promise<void>;
     readyToClose(): void;
     openDevTools(): void;

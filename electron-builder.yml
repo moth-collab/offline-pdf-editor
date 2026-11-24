@@ -75,7 +75,8 @@ win:
       to: assets/ocr/tesseract
   fileAssociations:
     - ext: pdf
-      name: PDF Document
+      # the ProgID; must match assets/installer/installer.nsh
+      name: OfflinePDFEditor.pdf
       description: PDF Document
       role: Editor
       icon: assets/icons/icon.ico
@@ -94,6 +95,7 @@ nsis:
   deleteAppDataOnUninstall: false
   differentialPackage: false
   license: assets/installer/license.txt
+  include: assets/installer/installer.nsh
 portable:
   artifactName: OfflinePDFEditor-${version}-portable-x64.${ext}
   unpackDirName: OfflinePDFEditor

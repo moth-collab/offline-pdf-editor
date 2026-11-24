@@ -145,8 +145,10 @@ export const PageView = memo(function PageView({ doc, pdf, slot, info, zoom, pri
     let disposed = false;
     const timer = window.setTimeout(() => {
       const job = scheduleRender(priority - 0.5, async () => {
-        const page = await pdf.getPage(slot.index + 1);
-        if (disposed) return;
+        // the page list can briefly be ahead of the loaded revision (pages just inserted)
+        if (slot.index >= pdf.numPages) return;
+        const page = await pdf.getPage(slot.index + 1).catch(() => null);
+        if (disposed || !page) return;
         const q = qualityFactor(quality);
         const viewport = page.getViewport({ scale: scaleOf(zoom) * q, rotation: info.rotation });
         const pad = 64;
@@ -197,8 +199,10 @@ export const PageView = memo(function PageView({ doc, pdf, slot, info, zoom, pri
     let layer: InstanceType<typeof pdfjsLib.TextLayer> | null = null;
     let disposed = false;
     (async () => {
-      const page = await pdf.getPage(slot.index + 1);
-      if (disposed) return;
+      // the page list can briefly be ahead of the loaded revision (pages just inserted)
+      if (slot.index >= pdf.numPages) return;
+      const page = await pdf.getPage(slot.index + 1).catch(() => null);
+      if (disposed || !page) return;
       const viewport = page.getViewport({ scale: scaleOf(zoom), rotation: info.rotation });
       div.replaceChildren();
       div.style.setProperty('--total-scale-factor', String(scaleOf(zoom)));

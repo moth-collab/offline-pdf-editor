@@ -157,7 +157,8 @@ def _estimate_size(doc: fitz.Document, pages: list[int]) -> int:
 PAGE_SIZES = {"a4": (595.28, 841.89), "letter": (612.0, 792.0)}
 
 
-def images_to_pdf(paths: list[str], out_path: Path, page_size: str = "image", margin: float = 0) -> int:
+def images_to_pdf(paths: list[str], out_path: Path, page_size: str | tuple[float, float] = "image", margin: float = 0) -> int:
+    """``page_size``: \"image\" (page = image size), a key of PAGE_SIZES, or an explicit (width, height)."""
     if not paths:
         raise AppError("invalid_request", "Select at least one image")
     out = fitz.open()
@@ -189,8 +190,8 @@ def images_to_pdf(paths: list[str], out_path: Path, page_size: str = "image", ma
                     frame.save(buf, "PNG")
                 w_pt = frame.size[0] * 72.0 / dpi_x
                 h_pt = frame.size[1] * 72.0 / dpi_y
-                if page_size in PAGE_SIZES:
-                    pw, ph = PAGE_SIZES[page_size]
+                if isinstance(page_size, tuple) or page_size in PAGE_SIZES:
+                    pw, ph = page_size if isinstance(page_size, tuple) else PAGE_SIZES[page_size]
                     if w_pt > h_pt:  # landscape image -> landscape page
                         pw, ph = ph, pw
                 else:
