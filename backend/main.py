@@ -47,7 +47,12 @@ def _parent_watchdog(ppid: int) -> None:
     while True:
         time.sleep(2)
         if not alive(ppid):
-            os._exit(0)
+            try:  # do not leave job processes (OCR, conversion) behind
+                from core.jobs import job_manager
+
+                job_manager.shutdown()
+            finally:
+                os._exit(0)
 
 
 def main() -> None:

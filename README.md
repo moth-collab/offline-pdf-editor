@@ -13,7 +13,9 @@ Get the latest Windows installer or portable version from the
 **[Releases page](https://github.com/moth-collab/offline-pdf-editor/releases/latest)**:
 
 - `OfflinePDFEditor-<version>-setup-x64.exe`: installer (no administrator rights needed)
-- `OfflinePDFEditor-<version>-portable-x64.exe`: runs without installation
+- `OfflinePDFEditor-<version>-portable-x64.exe`: runs without installation.
+  It unpacks itself (about 600 MB) at every start, so it starts more slowly
+  than the installed version. Use the installer for daily use.
 
 Windows 10/11 64-bit. Nothing else needs to be installed, and no internet
 connection is needed. Builds are not code-signed yet, so Windows SmartScreen

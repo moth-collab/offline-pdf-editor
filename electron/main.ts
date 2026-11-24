@@ -94,25 +94,58 @@ function cleanupTemp(): void {
   }
 }
 
+const SHUTDOWN_LIMIT_MS = 6000;
+
+/**
+ * Close sessions, stop the engine (with all its child processes) and clean
+ * up. Bounded in time: the app process must never linger without a window,
+ * because it holds the single-instance lock and a new launch would then do
+ * nothing visible.
+ */
 async function shutdown(): Promise<void> {
-  for (const id of [...backend.openDocs]) {
-    await backend.request('POST', `/documents/${id}/close`, { delete_session: true }, 5000);
-  }
-  await backend.stop();
+  const graceful = async () => {
+    // only talk to an engine that is up; never wait for a slow start here
+    if (backend.status.state === 'ready') {
+      await Promise.allSettled(
+        [...backend.openDocs].map((id) => backend.request('POST', `/documents/${id}/close`, { delete_session: true }, 2500)),
+      );
+    }
+  };
+  await Promise.race([graceful(), new Promise((r) => setTimeout(r, 3000))]);
+  await Promise.race([backend.stop(), new Promise((r) => setTimeout(r, SHUTDOWN_LIMIT_MS - 3000))]);
   if (getSettings().cleanupTempOnExit) {
-    fs.rmSync(appPaths().temp, { recursive: true, force: true });
+    try {
+      fs.rmSync(appPaths().temp, { recursive: true, force: true, maxRetries: 2, retryDelay: 100 });
+    } catch {
+      /* a file still in use; removed at the next start */
+    }
   }
 }
 
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
+  let quitting = false;
+  let relaunch: string[] | null = null;
+
   app.on('second-instance', (_e, argv) => {
-    if (mainWindow) {
-      if (mainWindow.isMinimized()) mainWindow.restore();
-      mainWindow.focus();
-      sendOpenFiles(filesFromArgv(argv));
+    if (quitting || allowClose) {
+      // the user started the app again while this instance is closing:
+      // start a fresh instance as soon as this one has exited
+      relaunch = argv.slice(1);
+      return;
     }
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      allowClose = false;
+      mainWindow = createWindow();
+      const files = filesFromArgv(argv);
+      mainWindow.webContents.once('did-finish-load', () => setTimeout(() => sendOpenFiles(files), 300));
+      return;
+    }
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    if (!mainWindow.isVisible()) mainWindow.show();
+    mainWindow.focus();
+    sendOpenFiles(filesFromArgv(argv));
   });
 
   app.whenReady().then(async () => {
@@ -137,12 +170,18 @@ if (!app.requestSingleInstanceLock()) {
     mainWindow?.close();
   });
 
-  let quitting = false;
   app.on('before-quit', (e) => {
     if (quitting) return;
     e.preventDefault();
     quitting = true;
-    shutdown().finally(() => app.exit(0));
+    // hard limit, whatever happens during shutdown
+    const force = setTimeout(() => finish(), SHUTDOWN_LIMIT_MS + 2000);
+    const finish = () => {
+      clearTimeout(force);
+      if (relaunch) app.relaunch({ args: relaunch.filter((a) => !a.startsWith('--')) });
+      app.exit(0);
+    };
+    shutdown().catch((err) => console.error('[shutdown]', err)).finally(finish);
   });
 
   app.on('window-all-closed', () => {

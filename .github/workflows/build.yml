@@ -66,6 +66,11 @@ jobs:
         run: npm run dist:win
       - name: Smoke test the bundled runtime on Windows
         run: release\win-unpacked\resources\python\python.exe scripts\smoke-test-runtime.py release\win-unpacked\resources
+      - name: Lifecycle test (start, close, start again; no processes left behind)
+        shell: pwsh
+        run: |
+          $portable = Get-ChildItem release\*-portable-x64.exe | Select-Object -First 1
+          node scripts/windows-lifecycle-test.mjs release\win-unpacked\OfflinePDFEditor.exe --portable $portable.FullName
       - uses: actions/upload-artifact@v4
         with:
           name: OfflinePDFEditor-windows

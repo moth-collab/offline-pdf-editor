@@ -10,7 +10,7 @@
  * The backend binds to 127.0.0.1 only.
  */
 import { app } from 'electron';
-import { spawn, type ChildProcess } from 'node:child_process';
+import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import fs from 'node:fs';
@@ -222,28 +222,47 @@ export class BackendService extends EventEmitter {
   async stop(): Promise<void> {
     this.stopping = true;
     const proc = this.proc;
-    if (!proc) return;
+    if (!proc || proc.exitCode !== null) return;
     await new Promise<void>((resolve) => {
       const timer = setTimeout(() => {
-        try {
-          proc.kill('SIGKILL');
-        } catch {
-          /* already gone */
-        }
+        killTree(proc, true);
         resolve();
       }, 3000);
       proc.once('exit', () => {
         clearTimeout(timer);
         resolve();
       });
-      try {
-        proc.kill();
-      } catch {
+      if (!killTree(proc, false)) {
         clearTimeout(timer);
         resolve();
       }
     });
     this.setStatus({ state: 'stopped' });
+  }
+}
+
+/**
+ * Stop the engine together with everything it started (job processes,
+ * Tesseract). On Windows, killing only python.exe would leave its children
+ * running; they would keep files of the app locked (the portable version then
+ * cannot be extracted again) and keep using CPU in the background.
+ */
+function killTree(proc: ChildProcess, force: boolean): boolean {
+  if (proc.exitCode !== null || !proc.pid) return false;
+  try {
+    if (process.platform === 'win32') {
+      const r = spawnSync(path.join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'taskkill.exe'), ['/PID', String(proc.pid), '/T', '/F'], {
+        windowsHide: true,
+        timeout: 5000,
+      });
+      if (r.status === 0) return true;
+      proc.kill();
+    } else {
+      proc.kill(force ? 'SIGKILL' : 'SIGTERM');
+    }
+    return true;
+  } catch {
+    return false;
   }
 }
 
