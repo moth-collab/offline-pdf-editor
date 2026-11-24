@@ -4,6 +4,21 @@ A desktop PDF editor for Windows 10/11 (x64) that works **completely
 offline**. Documents never leave your computer. There is no telemetry, no
 account and no cloud processing.
 
+[![Build](https://github.com/moth-collab/offline-pdf-editor/actions/workflows/build.yml/badge.svg)](https://github.com/moth-collab/offline-pdf-editor/actions/workflows/build.yml)
+[![License: AGPL-3.0-or-later](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue.svg)](LICENSE)
+
+## Download
+
+Get the latest Windows installer or portable version from the
+**[Releases page](https://github.com/moth-collab/offline-pdf-editor/releases/latest)**:
+
+- `OfflinePDFEditor-<version>-setup-x64.exe`: installer (no administrator rights needed)
+- `OfflinePDFEditor-<version>-portable-x64.exe`: runs without installation
+
+Windows 10/11 64-bit. Nothing else needs to be installed, and no internet
+connection is needed. Builds are not code-signed yet, so Windows SmartScreen
+may ask for confirmation (*More info › Run anyway*).
+
 ## Features
 
 - **View**: fast PDF.js rendering with lazy loading (tested with 500 pages),

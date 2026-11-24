@@ -5,6 +5,11 @@
   "description": "Professional offline PDF editor for Windows. All processing happens locally.",
   "author": "Offline PDF Editor Team",
   "license": "AGPL-3.0-or-later",
+  "homepage": "https://github.com/moth-collab/offline-pdf-editor",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/moth-collab/offline-pdf-editor.git"
+  },
   "private": true,
   "main": "dist-electron/main.cjs",
   "type": "module",
