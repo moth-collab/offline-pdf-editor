@@ -22,6 +22,9 @@ from pathlib import Path
 
 
 def main() -> None:
+    # CI consoles on Windows use a legacy code page; print Thai safely
+    for stream in (sys.stdout, sys.stderr):
+        stream.reconfigure(encoding="utf-8", errors="replace")
     res = Path(sys.argv[1]).resolve()
     work = Path(tempfile.mkdtemp(prefix="pdfed-smoke-"))
     token = secrets.token_hex(32)
