@@ -49,15 +49,25 @@ def _tesseract(img: Path, lang: str, dpi: int, psm: int = 3) -> list[dict]:
     cmd, tessdata = get_settings().resolve_tesseract()
     if not cmd:
         raise AppError("ocr_unavailable", "The OCR engine is not installed")
-    args = [cmd, str(img), "stdout", "-l", lang, "--dpi", str(dpi), "--psm", str(psm)]
+    # TSV goes to a UTF-8 file next to the image: console pipes and code pages
+    # differ between platforms, files do not
+    out_base = img.with_suffix("")
+    args = [cmd, str(img), str(out_base), "-l", lang, "--dpi", str(dpi), "--psm", str(psm)]
     if tessdata:
         args[1:1] = ["--tessdata-dir", str(tessdata)]
     # set the TSV output variable directly (bundled tessdata has no configs folder)
     args += ["-c", "preserve_interword_spaces=1", "-c", "tessedit_create_tsv=1", "-c", "tessedit_create_txt=0"]
-    proc = _run(args)
-    if proc.returncode != 0:
-        raise AppError("ocr_failed", f"OCR failed: {proc.stderr.strip()[:300]}")
-    rows = list(csv.DictReader(io.StringIO(proc.stdout), delimiter="\t", quoting=csv.QUOTE_NONE))
+    tsv = out_base.with_suffix(".tsv")
+    try:
+        proc = _run(args)
+        if proc.returncode != 0:
+            raise AppError("ocr_failed", f"OCR failed: {proc.stderr.strip()[:300]}")
+        if not tsv.exists():
+            raise AppError("ocr_failed", f"OCR produced no result: {proc.stderr.strip()[:300]}")
+        data = tsv.read_text(encoding="utf-8", errors="replace")
+    finally:
+        tsv.unlink(missing_ok=True)
+    rows = list(csv.DictReader(io.StringIO(data), delimiter="\t", quoting=csv.QUOTE_NONE))
     return [r for r in rows if r.get("level") == "5" and (r.get("text") or "").strip()]
 
 

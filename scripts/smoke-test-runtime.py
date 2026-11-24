@@ -104,6 +104,18 @@ def main() -> None:
         scan_path = work / "scan.pdf"
         scan.save(scan_path)
 
+        # diagnostics: run the bundled Tesseract directly, as the backend does
+        exe = res / "assets" / "ocr" / "tesseract" / ("tesseract.exe" if os.name == "nt" else "tesseract")
+        if exe.exists():
+            img = work / "diag.png"
+            pix.save(str(img))
+            diag = subprocess.run([str(exe), "--tessdata-dir", str(res / "assets" / "ocr" / "tessdata"), str(img),
+                                   str(work / "diag"), "-l", "tha+eng", "-c", "tessedit_create_tsv=1"],
+                                  capture_output=True, text=True, encoding="utf-8", errors="replace")
+            tsv = work / "diag.tsv"
+            print("tesseract rc:", diag.returncode, "| stderr:", diag.stderr.strip()[:500])
+            print("tsv bytes:", tsv.stat().st_size if tsv.exists() else "missing")
+
         info = call("POST", "/documents/open", {"path": str(scan_path)})
         doc = info["doc_id"]
         ocr = job("ocr", {"language": "tha+eng", "dpi": 300}, doc)
