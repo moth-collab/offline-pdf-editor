@@ -24,7 +24,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const failures = [];
 
 function ps(script) {
-  return execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], { encoding: 'utf8' }).trim();
+  // "; exit 0": Get-Process sets a failing exit code when nothing matches
+  return execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', `${script}; exit 0`], { encoding: 'utf8' }).trim();
 }
 
 /** Processes of the app: Electron (by name) and Python/Tesseract started from its folders. */
