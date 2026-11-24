@@ -1,0 +1,105 @@
+# Windows 10/11 x64 packaging: NSIS installer + portable executable.
+# Run `npm run dist:win` (builds, prepares the bundled runtime, packages).
+appId: com.offlinepdfeditor.app
+productName: Offline PDF Editor
+copyright: Copyright © 2026 Offline PDF Editor Team
+artifactName: OfflinePDFEditor-${version}-${arch}.${ext}
+directories:
+  output: release
+  buildResources: assets/icons
+# Renderer (Vite) and main/preload (esbuild) are fully bundled; no runtime
+# node_modules are needed inside the app archive.
+files:
+  - dist/**/*
+  - dist-electron/**/*
+  - package.json
+  - "!**/node_modules/**/*"
+  - "!**/*.map"
+asar: true
+compression: maximum
+npmRebuild: false
+nodeGypRebuild: false
+buildDependenciesFromSource: false
+extraResources:
+  - from: backend
+    to: backend
+    filter:
+      - "**/*.py"
+      - requirements.txt
+      - "!.venv/**"
+      - "!**/__pycache__/**"
+      - "!**/.pytest_cache/**"
+  - from: assets/fonts
+    to: assets/fonts
+  - from: assets/dicts
+    to: assets/dicts
+  - from: assets/ocr/tessdata
+    to: assets/ocr/tessdata
+  - from: assets/icons
+    to: assets/icons
+  - from: docs
+    to: docs
+    filter: ["PRIVACY.md", "INSTALL.md", "USER_GUIDE.md"]
+  - from: THIRD_PARTY_NOTICES.md
+    to: THIRD_PARTY_NOTICES.md
+  - from: LICENSE
+    to: LICENSE
+  # complete corresponding source (AGPL-3.0 §6), made by scripts/make-source-archive.py
+  - from: build/source
+    to: source
+  - from: README.md
+    to: README.md
+# Hardening of the Electron binary itself.
+electronFuses:
+  runAsNode: false
+  enableCookieEncryption: true
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  enableEmbeddedAsarIntegrityValidation: true
+  onlyLoadAppFromAsar: true
+  grantFileProtocolExtraPrivileges: false
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+  icon: assets/icons/icon.ico
+  executableName: OfflinePDFEditor
+  requestedExecutionLevel: asInvoker
+  # The bundled, self-contained runtime prepared by scripts/prepare-win-runtime.mjs
+  extraResources:
+    - from: build/win-runtime/python
+      to: python
+    - from: build/win-runtime/tesseract
+      to: assets/ocr/tesseract
+  fileAssociations:
+    - ext: pdf
+      name: PDF Document
+      description: PDF Document
+      role: Editor
+      icon: assets/icons/icon.ico
+nsis:
+  artifactName: OfflinePDFEditor-${version}-setup-x64.${ext}
+  oneClick: false
+  perMachine: false
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Offline PDF Editor
+  installerIcon: assets/icons/icon.ico
+  uninstallerIcon: assets/icons/icon.ico
+  # User documents, settings and recovery data are never deleted silently.
+  deleteAppDataOnUninstall: false
+  differentialPackage: false
+  license: assets/installer/license.txt
+portable:
+  artifactName: OfflinePDFEditor-${version}-portable-x64.${ext}
+  unpackDirName: OfflinePDFEditor
+# No auto-update feed is configured: the application never phones home.
+publish: null
+linux:
+  target: [dir]
+  icon: assets/icons/icon-512.png
+  category: Office

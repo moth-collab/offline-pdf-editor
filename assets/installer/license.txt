@@ -1,0 +1,49 @@
+Offline PDF Editor - Licence and Privacy Notice
+================================================
+
+PRIVACY
+-------
+Offline PDF Editor processes every document entirely on this computer.
+
+  * Documents are never uploaded, synchronised or sent to any server.
+  * OCR, conversion, compression, signing and redaction run locally.
+  * There is no telemetry, analytics, crash reporting or advertising.
+  * No account or sign-in is required. No internet connection is required.
+  * Update checks are not performed.
+
+Temporary working copies, autosave/recovery data and backups are stored in
+your local user profile (%APPDATA%\Offline PDF Editor) and are cleaned up
+according to the retention settings in Preferences > Privacy.
+
+Your original files are never overwritten unless you explicitly choose
+Save; "Save As" always writes a new file.
+
+LICENCE
+-------
+Offline PDF Editor - Copyright (C) 2026 Offline PDF Editor contributors
+
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU Affero General Public License as published by the
+Free Software Foundation, either version 3 of the License, or (at your
+option) any later version. The full licence text is in the file LICENSE in
+the installation folder.
+
+The complete source code of this version is included with the program
+(folder "resources\source", or Help > About > Source code & licence).
+
+THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT WITHOUT
+ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+FOR A PARTICULAR PURPOSE. Always keep copies of important documents.
+
+THIRD-PARTY SOFTWARE
+--------------------
+This product bundles open-source components, each under its own licence
+(see THIRD_PARTY_NOTICES.md in the installation folder), including:
+
+  * Electron / Chromium (MIT, BSD and others)
+  * PDF.js (Apache-2.0)
+  * Python (PSF License)
+  * PyMuPDF / MuPDF (GNU AGPL-3.0)
+  * pikepdf / qpdf (MPL-2.0 / Apache-2.0)
+  * Tesseract OCR and its libraries (Apache-2.0 and others)
+  * Fonts: Sarabun, Noto (SIL Open Font License 1.1), Liberation (OFL 1.1)

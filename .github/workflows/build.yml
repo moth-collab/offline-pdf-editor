@@ -1,0 +1,89 @@
+# Tests on Linux, then builds the Windows installer + portable app on a real
+# Windows machine and smoke-tests the bundled runtime (Python, Tesseract OCR,
+# fonts). Pushing a tag like "v1.0.0" publishes a GitHub Release with the files.
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Tests (Linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: System packages (Tesseract for OCR tests)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends tesseract-ocr
+      - run: npm ci
+      - name: Backend environment
+        run: |
+          python -m venv backend/.venv
+          backend/.venv/bin/pip install -r backend/requirements-dev.txt
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run test:backend
+
+  windows:
+    name: Windows installer
+    runs-on: windows-latest
+    timeout-minutes: 60
+    needs: test
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false' # unsigned build (no code-signing certificate)
+      PDFED_HOST_PYTHON: python
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: npm ci
+      - name: Build installer and portable app
+        run: npm run dist:win
+      - name: Smoke test the bundled runtime on Windows
+        run: release\win-unpacked\resources\python\python.exe scripts\smoke-test-runtime.py release\win-unpacked\resources
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OfflinePDFEditor-windows
+          path: |
+            release/*.exe
+            build/source/*.zip
+          if-no-files-found: error
+          retention-days: 30
+
+  release:
+    name: Publish release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: windows
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: OfflinePDFEditor-windows
+          path: dist-release
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist-release/release/*.exe
+            dist-release/build/source/*.zip
+          generate_release_notes: true
